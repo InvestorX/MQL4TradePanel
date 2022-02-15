@@ -4,9 +4,11 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.IO;
+using System.IO.MemoryMappedFiles;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -17,6 +19,12 @@ namespace MQL4TradePanel
 {
     public partial class Form1 : Form
     {
+
+        [DllImport("MM0423.dll", CharSet = CharSet.Ansi)]
+        private extern static IntPtr GetMemString(String tag);
+
+        [DllImport("MM0423.dll", CharSet = CharSet.Ansi)]
+        private extern static IntPtr SetMemString(string tag, string msg);
 
 
         //TradePanel用DPI調整係数
@@ -265,6 +273,53 @@ namespace MQL4TradePanel
         private void button2_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void button9_Click(object sender, EventArgs e)
+        {
+            //Console.WriteLine(Marshal.PtrToStringAnsi(GetMemString("mtexe")));
+            textBox2.Text = "";
+            try
+            {
+                MemoryMappedFile mmf = MemoryMappedFile.OpenExisting("exemtsymbol");
+                MemoryMappedViewAccessor accessor = mmf.CreateViewAccessor();
+
+                char[] data = new char[256];
+                int readsize = accessor.ReadArray<char>(0, data, 0, 256);
+
+                textBox2.Text += new string(data);
+
+                accessor.Dispose();
+                mmf.Dispose();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void button10_Click(object sender, EventArgs e)
+        {
+            //// Open shared memory
+            //MemoryMappedFile share_mem = MemoryMappedFile.CreateNew("exemtsymbol", 1024);
+            //MemoryMappedViewAccessor accessor = share_mem.CreateViewAccessor();
+
+            //// Write data to shared memory
+            //string str = "Hello World";
+            //char[] data = str.ToCharArray();
+            //accessor.Write(0, data.Length);
+            //accessor.WriteArray<char>(sizeof(int), data, 0, data.Length);
+
+            //// Dispose accessor
+            //accessor.Dispose();
+
+            MemoryMappedFile mmf = MemoryMappedFile.CreateNew("exemt.symbol", 256);
+            MemoryMappedViewAccessor accessor = mmf.CreateViewAccessor();
+
+            string value = "ペンギンが滑った";
+            char[] data = value.ToCharArray();
+            accessor.WriteArray<char>(0, data, 0, data.Length);
+            accessor.Dispose();
         }
     }
 }
